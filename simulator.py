@@ -4,13 +4,25 @@ import pandas as pd
 import plotly.express as px
 import json
 
-def callback(ch, method, properties, body):
-    # print(json.loads(body))
-    # message = json.loads(body)
+timeList = []
+pvList = []
 
-    df = pd.read_json(body)
-    fig = px.area(df, x="time", y="PV")
-    fig.show()
+def callback(ch, method, properties, body):
+    global timeList
+    global pvList
+
+    messageDict = json.loads(body)
+    if messageDict is None:
+        df = pd.read_json(json.dumps({"Time": timeList, "PV": pvList}))
+        fig = px.area(df, x="Time", y="PV")
+        fig.show()
+        timeList = []
+        pvList = []
+        return
+
+    timeList.append(messageDict["time"])
+    pvList.append(messageDict["pv"])
+
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
