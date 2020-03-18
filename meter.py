@@ -4,61 +4,46 @@ import json
 import random
 import datetime
 
-startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-currentTime = startTime
-modifier = 0
+class Meter():
+    startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    currentTime = startTime
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    queueName = 'default'
 
-def publish(message):
-    pvChannel = connection.channel()
-    pvChannel.queue_declare(queue='hello')
-    pvChannel.basic_publish(
-        exchange='', routing_key='hello', body=json.dumps(message))
+    def __init__(self, queueName):
+        self.queueName = queueName
 
-def nextMessage():
-    global currentTime
-    message = {
-        "time": currentTime.strftime("%Y-%m-%d %H:%M:%S"),
-        "pv": getPVFromTime()
-    }
-    currentTime += datetime.timedelta(minutes=2)
-    return message
+    def publish(self, message):
+        pvChannel = self.connection.channel()
+        pvChannel.queue_declare(queue=self.queueName)
+        pvChannel.basic_publish(exchange='', routing_key=self.queueName, body=json.dumps(message))
 
-def getPVFromTime():
-    global modifier
+    def getConsumeFromTime(self):
+        # https://www.desmos.com/calculator/sanlujpfmc
+        x = (self.currentTime - self.startTime).total_seconds() / 60 / 60
+        a = 0.25228
+        b = -15.1446
+        c = 256.716
+        d = -932.24
+        f = 3530.65
+        y = a*x**4 + b*x**3 + c*x**2 + d*x + f
 
-    # Before or after hours
-    if currentTime.hour < 6 or currentTime.hour >= 21:
-        return 0
-    
-    variability = 3000 * 0.010
-    x = (currentTime - startTime).total_seconds() / 60 / 60
-    y = (-700 * x**2 / 9) + (19525 * x / 9) - (109150 / 9)
-    modifierModifer = random.uniform(variability * -1, variability)
+        return max(y, 0)
 
-    if modifier + modifierModifer > variability:
-        modifier -= modifierModifer
-    elif modifier - modifierModifer > variability:
-        modifier += modifierModifer
-    elif modifier + modifierModifer < -1 * variability:
-        modifier -= modifierModifer
-    elif modifier - modifierModifer < -1 * variability:
-        modifier += modifierModifer
-    else:
-        modifier += modifierModifer
+    def nextMessage(self):
+        message = {
+            "time": self.currentTime.strftime("%Y-%m-%d %H:%M:%S"),
+            "consumption": self.getConsumeFromTime()
+        }
+        self.currentTime += datetime.timedelta(minutes=2)
+        return message
 
-    # Startup hours
-    if currentTime.hour >= 6 and currentTime.hour < 8:
-        y = 125 * x - 750
+    def start(self):
+        # currentTime + inverval < ...
+        print("Start")
+        while self.currentTime < self.startTime + datetime.timedelta(days=1):
+            self.publish(self.nextMessage())
+        self.publish(None)
+        self.connection.close()
 
-    # Wind down hours
-    if currentTime.hour >= 20 and currentTime.hour < 21:
-        y = -150 * x + 3150
-
-    return max(y + modifier, 0)
-
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))    
-# currentTime + inverval < ...
-while currentTime < startTime + datetime.timedelta(days=1):
-    publish(nextMessage())
-publish(None)
-connection.close()
+Meter('default').start()
