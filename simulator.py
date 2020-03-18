@@ -3,6 +3,7 @@ import pika
 import pandas as pd
 import plotly.express as px
 import json
+import csv
 import datetime
 import random
 
@@ -10,12 +11,11 @@ import plotly.graph_objects as go
 
 
 class Simulator():
-    startTime = datetime.datetime.now().replace(
-        hour=0, minute=0, second=0, microsecond=0)
     modifier = 0
     timeList = []
     meterList = []
     pvList = []
+    netPowerList = []
 
     def __init__(self, queueName):
         connection = pika.BlockingConnection(
@@ -34,19 +34,15 @@ class Simulator():
         if currentTime.hour < 6 or currentTime.hour >= 21:
             return 0
 
-        variability = 3000 * 0.010
-        x = (currentTime - self.startTime).total_seconds() / 60 / 60
+        variability = 3000 * 0.015
+        startTime = currentTime.replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        x = (currentTime - startTime).total_seconds() / 60 / 60
         y = (-700 * x**2 / 9) + (19525 * x / 9) - (109150 / 9)
         modifierModifer = random.uniform(variability * -1, variability)
 
-        if modifier + modifierModifer > variability:
+        if abs(modifier + modifierModifer) > abs(variability):
             modifier -= modifierModifer
-        elif modifier - modifierModifer > variability:
-            modifier += modifierModifer
-        elif modifier + modifierModifer < -1 * variability:
-            modifier -= modifierModifer
-        elif modifier - modifierModifer < -1 * variability:
-            modifier += modifierModifer
         else:
             modifier += modifierModifer
 
@@ -60,26 +56,32 @@ class Simulator():
 
         self.modifier = modifier
         self.currentTime = currentTime
-        return max(y + modifier, 0)
+        return max(y + modifier, 0) / 1000
 
     def callback(self, ch, method, properties, body):
         messageDict = json.loads(body)
         if messageDict is not None:
             self.timeList.append(messageDict["time"])
             self.meterList.append(messageDict["consumption"])
-            time = datetime.datetime.strptime(
+            
+            currentTime = datetime.datetime.strptime(
                 messageDict["time"], "%Y-%m-%d %H:%M:%S")
-            self.pvList.append(self.getPVFromTime(time))
+            pvGenerated = self.getPVFromTime(currentTime)
+            self.pvList.append(pvGenerated)
+            self.netPowerList.append(pvGenerated + messageDict["consumption"])
         else:
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=self.timeList, y=self.meterList,
+            n = 60
+            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.meterList[::n],
                                      fill='tozeroy', name="Consumption"))
-            fig.add_trace(go.Scatter(x=self.timeList, y=self.pvList,
+            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.pvList[::n],
                                      fill='tozeroy', name="Generation"))
+            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.netPowerList[::n],
+                                     fill='tozeroy', name="Net Power"))
             fig.update_layout(
                 title="Home Power",
                 xaxis_title="Time",
-                yaxis_title="Power (W)",
+                yaxis_title="Power (kW)",
                 font=dict(
                     family="Courier New, monospace",
                     size=18,
@@ -88,7 +90,17 @@ class Simulator():
             )
             fig.show()
 
+            a = zip(self.timeList, self.meterList, self.pvList, self.netPowerList)
+            with open("output.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerows(a)
+
             self.timeList = []
             self.meterList = []
+            self.pvList = []
+            self.netPowerList = []
+            self.modifier = 0
 
-Simulator('default')
+
+if __name__ == '__main__':
+    Simulator('default')
