@@ -7,17 +7,22 @@ import datetime
 class Meter():
     startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     currentTime = startTime
-    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
+    timeDelta = 120
+    connection = None
+    channel = None
     queueName = 'default'
 
     def __init__(self, queueName='default'):
         self.queueName = queueName
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
         self.channel.queue_declare(queue=queueName)
 
     def publish(self, message):
-        self.channel.basic_publish(
-            exchange='', routing_key=self.queueName, body=json.dumps(message))
+        if self.channel is not None:
+            self.channel.basic_publish(
+                exchange='', routing_key=self.queueName, body=json.dumps(message))
 
     def getConsptionFromTime(self):
         # https://www.desmos.com/calculator/sanlujpfmc
@@ -37,7 +42,7 @@ class Meter():
             "time": self.currentTime.strftime("%Y-%m-%d %H:%M:%S"),
             "consumption": self.getConsptionFromTime()
         }
-        self.currentTime += datetime.timedelta(seconds=120)
+        self.currentTime += datetime.timedelta(seconds=self.timeDelta)
         return message
 
     def start(self):
@@ -46,6 +51,5 @@ class Meter():
         self.publish(None)
         self.connection.close()
 
-
 if __name__ == '__main__':
-    Meter('default').start()
+    Meter().start()

@@ -5,9 +5,10 @@ from simulator import Simulator
 from meter import Meter
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 
+
 class MyApp(QtWidgets.QMainWindow):
+    mySim = Simulator()
     simulatorProcess = None
-    mySim = None
 
     def __init__(self):
         super(MyApp, self).__init__()
@@ -18,7 +19,13 @@ class MyApp(QtWidgets.QMainWindow):
         self.setIntensitySlider()
         self.setTimeSlider()
         self.setConsumptionSlider()
-        # self.simulateButton.setEnabled(False)
+        self.simulateButton.setEnabled(False)
+        self.simulateButton.setEnabled(False)
+
+        self.changedConsumptionSlider()
+        self.changedTimeSlider()
+        self.changedNthSlider()
+        self.changedIntensitySlider()
 
     def setIntensitySlider(self):
         self.intensitySlider.setMinimum(1)
@@ -43,14 +50,21 @@ class MyApp(QtWidgets.QMainWindow):
             self.changedConsumptionSlider)
 
     def setNthSlider(self):
-        self.nthSlider.setMinimum(1)
-        self.nthSlider.setMaximum(10)
-        self.nthSlider.setValue(2)
+        self.nthSlider.setMinimum(60)
+        self.nthSlider.setMaximum(1200)
+        self.nthSlider.setValue(60)
         self.nthSlider.setTickInterval(1)
         self.nthSlider.valueChanged.connect(self.changedNthSlider)
 
+        self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
+
     def changedNthSlider(self):
         self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
+        # if self.brokerButton.isChecked():
+        #     print("toggler")
+        #     self.toggleBroker()
+        # else:
+        #     print("O")
 
     def changedTimeSlider(self):
         self.timeValueLabel.setText(str(self.timeSlider.value()) + " pts.")
@@ -62,29 +76,38 @@ class MyApp(QtWidgets.QMainWindow):
         self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + " pts.")
 
     def toggleBroker(self):
+        # Broker is running, so stop it
         if self.brokerButton.isChecked():
+            self.simulateButton.setEnabled(False)
             self.brokerButton.setCheckable(False)
             self.simulatorProcess.terminate()
             self.brokerButton.setText("Start Broker")
+        # Broker is stopped, so start it
         else:
+            self.simulateButton.setEnabled(True)
             self.brokerButton.setCheckable(True)
-            self.mySim = Simulator()
-            self.simulatorProcess = multiprocessing.Process(
-                target=self.mySim.startConsuming)
-            self.simulatorProcess.daemon = True
-            self.simulatorProcess.start()
-            # self.simulatorProcess.join(0)
+            self.startSimulator()
             self.brokerButton.setText("Stop Broker")
 
-    def simulate(self):
-        # price = int(self.price_box.toPlainText())
-        # tax = (self.tax_rate.value())
-        # total_price = price + ((tax / 100) * price)
-        # total_price_string = "The total price with tax is: " + str(total_price)
-        # self.results_window.setText(total_price_string)
-        Meter('default').start()
-        print("Button!")
+    def startSimulator(self):
+        self.simulatorProcess = multiprocessing.Process(
+            target=self.mySim.startConsuming)
+        self.simulatorProcess.daemon = True
+        self.simulatorProcess.start()
+        self.simulatorProcess.join(0)
 
+    def simulate(self):
+        meter = Meter()
+        meter.timeDelta = self.timeSlider.value()
+        self.mySim.n = self.nthSlider.value()
+
+        # self.simulatorProcess.terminate()
+        # self.simulatorProcess = multiprocessing.Process(
+        #     target=self.mySim.startConsuming)
+        # self.simulatorProcess.daemon = True
+        # self.simulatorProcess.start()
+        # self.simulatorProcess.join(0)
+        meter.start()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)

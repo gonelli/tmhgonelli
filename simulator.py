@@ -18,6 +18,8 @@ class Simulator():
     pvList = []
     netPowerList = []
 
+    n = 60
+
     connection = None
     channel = None
 
@@ -35,8 +37,8 @@ class Simulator():
         self.channel.start_consuming()
     
     def stopConsuming(self):
-        self.channel.stop_consuming()
-        print("stopped")
+        if self.channel is not None:
+            self.channel.stop_consuming()
 
     def getPVFromTime(self, currentTime):
         modifier = self.modifier
@@ -81,8 +83,8 @@ class Simulator():
             self.pvList.append(pvGenerated)
             self.netPowerList.append(pvGenerated + messageDict["consumption"])
         else:
+            n = self.n
             fig = go.Figure()
-            n = 60
             fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.meterList[::n],
                                      fill='tozeroy', name="Consumption"))
             fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.pvList[::n],
@@ -101,10 +103,10 @@ class Simulator():
             )
             fig.show()
 
-            a = zip(self.timeList, self.meterList, self.pvList, self.netPowerList)
-            with open("output.csv", "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerows(a)
+            # a = zip(self.timeList, self.meterList, self.pvList, self.netPowerList)
+            # with open("output.csv", "w", newline="") as f:
+            #     writer = csv.writer(f)
+            #     writer.writerows(a)
 
             self.timeList = []
             self.meterList = []
