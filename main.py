@@ -1,18 +1,24 @@
 import sys
+import threading
+import multiprocessing
+from simulator import Simulator
+from meter import Meter
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 
 class MyApp(QtWidgets.QMainWindow):
+    simulatorProcess = None
+    mySim = None
+
     def __init__(self):
         super(MyApp, self).__init__()
         uic.loadUi('config.ui', self)
         self.simulateButton.clicked.connect(self.simulate)
-        # self.brokerButton.setCheckable(True)
         self.brokerButton.clicked.connect(self.toggleBroker)
         self.setNthSlider()
         self.setIntensitySlider()
         self.setTimeSlider()
         self.setConsumptionSlider()
-        self.simulateButton.setEnabled(False)
+        # self.simulateButton.setEnabled(False)
 
     def setIntensitySlider(self):
         self.intensitySlider.setMinimum(1)
@@ -58,16 +64,25 @@ class MyApp(QtWidgets.QMainWindow):
     def toggleBroker(self):
         if self.brokerButton.isChecked():
             self.brokerButton.setCheckable(False)
+            self.simulatorProcess.terminate()
             self.brokerButton.setText("Start Broker")
         else:
             self.brokerButton.setCheckable(True)
+            self.mySim = Simulator()
+            self.simulatorProcess = multiprocessing.Process(
+                target=self.mySim.startConsuming)
+            self.simulatorProcess.daemon = True
+            self.simulatorProcess.start()
+            # self.simulatorProcess.join(0)
             self.brokerButton.setText("Stop Broker")
+
     def simulate(self):
         # price = int(self.price_box.toPlainText())
         # tax = (self.tax_rate.value())
         # total_price = price + ((tax / 100) * price)
         # total_price_string = "The total price with tax is: " + str(total_price)
         # self.results_window.setText(total_price_string)
+        Meter('default').start()
         print("Button!")
 
 

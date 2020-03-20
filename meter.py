@@ -11,7 +11,7 @@ class Meter():
     channel = connection.channel()
     queueName = 'default'
 
-    def __init__(self, queueName):
+    def __init__(self, queueName='default'):
         self.queueName = queueName
         self.channel.queue_declare(queue=queueName)
 
@@ -37,7 +37,7 @@ class Meter():
             "time": self.currentTime.strftime("%Y-%m-%d %H:%M:%S"),
             "consumption": self.getConsptionFromTime()
         }
-        self.currentTime += datetime.timedelta(seconds=2)
+        self.currentTime += datetime.timedelta(seconds=120)
         return message
 
     def start(self):

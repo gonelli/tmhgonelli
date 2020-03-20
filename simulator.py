@@ -6,6 +6,7 @@ import json
 import csv
 import datetime
 import random
+import threading
 
 import plotly.graph_objects as go
 
@@ -17,15 +18,25 @@ class Simulator():
     pvList = []
     netPowerList = []
 
-    def __init__(self, queueName):
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
-        channel = connection.channel()
-        channel.queue_declare(queue=queueName)
-        channel.basic_consume(
-            queue=queueName, on_message_callback=self.callback, auto_ack=True)
+    connection = None
+    channel = None
+
+    def __init__(self):
         # print(' [*] Waiting for messages. To exit press CTRL+C')
-        channel.start_consuming()
+        pass
+
+    def startConsuming(self, queueName='default'):
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue=queueName)
+        self.channel.basic_consume(
+            queue=queueName, on_message_callback=self.callback, auto_ack=True)
+        self.channel.start_consuming()
+    
+    def stopConsuming(self):
+        self.channel.stop_consuming()
+        print("stopped")
 
     def getPVFromTime(self, currentTime):
         modifier = self.modifier
@@ -101,6 +112,7 @@ class Simulator():
             self.netPowerList = []
             self.modifier = 0
 
-
 if __name__ == '__main__':
-    Simulator('default')
+    sim = Simulator()
+    sim.startConsuming('default')
+    sim.startConsuming()
