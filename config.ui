@@ -29,7 +29,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Gonelli TMH Challenge</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="verticalLayoutWidget_2">
@@ -72,7 +72,7 @@
        <item>
         <widget class="QLabel" name="intensityLabel">
          <property name="text">
-          <string>Sun Intensity</string>
+          <string>Solar Intensity</string>
          </property>
         </widget>
        </item>
@@ -97,7 +97,7 @@
        <item>
         <widget class="QLabel" name="nthLabel">
          <property name="text">
-          <string>Every nth Plot Point</string>
+          <string>Plot Every N Points</string>
          </property>
         </widget>
        </item>
@@ -145,6 +145,9 @@
     </layout>
    </widget>
    <widget class="QPushButton" name="simulateButton">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -161,6 +164,9 @@
     </property>
    </widget>
    <widget class="QCheckBox" name="createGraphBox">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -171,6 +177,9 @@
     </property>
     <property name="text">
      <string>Create a graph</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="openCSVBox">

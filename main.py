@@ -14,19 +14,27 @@ class MyApp(QtWidgets.QMainWindow):
         uic.loadUi('config.ui', self)
         self.simulateButton.clicked.connect(self.sendMeter)
         self.brokerButton.clicked.connect(self.toggleBroker)
+        self.openCSVBox.clicked.connect(self.boxToggled)
+        self.createGraphBox.clicked.connect(self.boxToggled)
         self.setNthSlider()
         self.setIntensitySlider()
         self.setTimeSlider()
         self.setConsumptionSlider()
-        self.simulateButton.setEnabled(False)
+
+        if sys.platform == "win32":
+            self.openCSVBox.setParent(None)
+
+    def boxToggled(self):
+        if self.brokerButton.text() == "Stop Broker":
+            self.toggleBroker()
 
     def setIntensitySlider(self):
-        self.intensitySlider.setMinimum(1)
-        self.intensitySlider.setMaximum(10)
-        self.intensitySlider.setValue(2)
+        self.intensitySlider.setMinimum(0)
+        self.intensitySlider.setMaximum(200)
+        self.intensitySlider.setValue(100)
         self.intensitySlider.setTickInterval(1)
         self.intensitySlider.valueChanged.connect(self.changedIntensitySlider)
-        self.intensityValueLabel.setText(str(self.intensitySlider.value()) + " pts.")
+        self.intensityValueLabel.setText(str(self.intensitySlider.value()) + "%")
 
     def setTimeSlider(self):
         self.timeSlider.setMinimum(1)
@@ -34,51 +42,54 @@ class MyApp(QtWidgets.QMainWindow):
         self.timeSlider.setValue(2)
         self.timeSlider.setTickInterval(1)
         self.timeSlider.valueChanged.connect(self.changedTimeSlider)
-        self.timeValueLabel.setText(str(self.timeSlider.value()) + " pts.")
+        self.timeValueLabel.setText(str(self.timeSlider.value()) + " sec.")
         
     def setConsumptionSlider(self):
-        self.consumptionSlider.setMinimum(1)
-        self.consumptionSlider.setMaximum(10)
-        self.consumptionSlider.setValue(2)
+        self.consumptionSlider.setMinimum(0)
+        self.consumptionSlider.setMaximum(200)
+        self.consumptionSlider.setValue(100)
         self.consumptionSlider.setTickInterval(1)
         self.consumptionSlider.valueChanged.connect(self.changedConsumptionSlider)
-        self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + " pts.")
+        self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + "%")
 
     def setNthSlider(self):
-        self.nthSlider.setMinimum(60)
-        self.nthSlider.setMaximum(1200)
+        self.nthSlider.setMinimum(1)
+        self.nthSlider.setMaximum(1000)
         self.nthSlider.setValue(60)
         self.nthSlider.setTickInterval(1)
         self.nthSlider.valueChanged.connect(self.changedNthSlider)
         self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
 
-    def changedNthSlider(self):
-        self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
+    def changedIntensitySlider(self):
+        self.intensityValueLabel.setText(str(self.intensitySlider.value()) + "%")
         if self.brokerButton.text() == "Stop Broker":
             self.toggleBroker()
 
     def changedTimeSlider(self):
         self.timeValueLabel.setText(str(self.timeSlider.value()) + " pts.")
 
-    def changedIntensitySlider(self):
-        self.intensityValueLabel.setText(str(self.intensitySlider.value()) + " pts.")
-
     def changedConsumptionSlider(self):
-        self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + " pts.")
+        self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + "%")
+
+    def changedNthSlider(self):
+        self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
+        if self.brokerButton.text() == "Stop Broker":
+            self.toggleBroker()
 
     def toggleBroker(self):
         # Broker is running, so stop it
         if self.brokerButton.text() == "Stop Broker":
-            # self.brokerButton.setCheckable(False)
             self.simulateButton.setEnabled(False)
             self.simulatorProcess.terminate()
             self.brokerButton.setText("Start Broker")
         # Broker is stopped, so start it
         else:
-            # self.brokerButton.setCheckable(True)
             self.simulateButton.setEnabled(True)
             self.mySim = Simulator()
             self.mySim.n = self.nthSlider.value()
+            self.mySim.intensity = float(self.intensitySlider.value()) / 100.0
+            self.mySim.openCSV = self.openCSVBox.isChecked()
+            self.mySim.createGraph = self.createGraphBox.isChecked()
             self.simulatorProcess = multiprocessing.Process(
                 target=self.mySim.startConsuming)
             self.simulatorProcess.daemon = True
@@ -89,6 +100,7 @@ class MyApp(QtWidgets.QMainWindow):
     def sendMeter(self):
         meter = Meter()
         meter.timeDelta = self.timeSlider.value()
+        meter.relativeUsage = float(self.consumptionSlider.value()) / 100.0
         meter.start()
         print("Button!")
 

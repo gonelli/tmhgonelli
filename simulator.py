@@ -2,13 +2,13 @@
 import pika
 import pandas as pd
 import plotly.express as px
-import json
-import csv
+import json, csv
 import datetime
 import random
-import threading
 
 import plotly.graph_objects as go
+
+import subprocess, sys
 
 
 class Simulator():
@@ -19,6 +19,9 @@ class Simulator():
     netPowerList = []
 
     n = 60
+    intensity = 1.0
+    openCSV = False
+    createGraph = True
 
     connection = None
     channel = None
@@ -69,7 +72,7 @@ class Simulator():
 
         self.modifier = modifier
         self.currentTime = currentTime
-        return max(y + modifier, 0) / 1000
+        return max(y + modifier, 0) / 1000 * self.intensity
 
     def callback(self, ch, method, properties, body):
         messageDict = json.loads(body)
@@ -83,29 +86,31 @@ class Simulator():
             self.pvList.append(pvGenerated)
             self.netPowerList.append(pvGenerated + messageDict["consumption"])
         else:
-            fig = go.Figure()
-            n = self.n
-            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.meterList[::n],
-                                     fill='tozeroy', name="Consumption"))
-            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.pvList[::n],
-                                     fill='tozeroy', name="Generation"))
-            fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.netPowerList[::n],
-                                     fill='tozeroy', name="Net Power"))
-            fig.update_layout(
-                title="Home Power",
-                xaxis_title="Time",
-                yaxis_title="Power (kW)",
-                font=dict(
-                    family="Courier New, monospace",
-                    size=18,
-                    color="#7f7f7f"
+            if self.createGraph:
+                fig = go.Figure()
+                n = self.n
+                fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.meterList[::n],
+                                        fill='tozeroy', name="Consumption"))
+                fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.pvList[::n],
+                                        fill='tozeroy', name="Generation"))
+                fig.add_trace(go.Scatter(x=self.timeList[::n], y=self.netPowerList[::n],
+                                        fill='tozeroy', name="Net Power"))
+                fig.update_layout(
+                    title="Home Power",
+                    xaxis_title="Time",
+                    yaxis_title="Power (kW)",
+                    font=dict(
+                        family="Courier New, monospace",
+                        size=18,
+                        color="#7f7f7f"
+                    )
                 )
-            )
-            fig.show()
+                fig.show()
 
             a = zip(self.timeList, self.meterList, self.pvList, self.netPowerList)
             with open("output.csv", "w", newline="") as f:
                 writer = csv.writer(f)
+                writer.writerow(['time', 'consumption', 'pv', 'net'])
                 writer.writerows(a)
 
             self.timeList = []
@@ -113,6 +118,11 @@ class Simulator():
             self.pvList = []
             self.netPowerList = []
             self.modifier = 0
+
+            if self.openCSV:
+                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                subprocess.call([opener, 'output.csv'])
+
 
 if __name__ == '__main__':
     sim = Simulator()

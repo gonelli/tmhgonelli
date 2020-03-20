@@ -11,6 +11,7 @@ class Meter():
     channel = None
     queueName = 'default'
     timeDelta = 120
+    relativeUsage = 1.0
 
     def __init__(self, queueName='default'):
 
@@ -36,7 +37,7 @@ class Meter():
         f = 3530.65
         y = a*x**4 + b*x**3 + c*x**2 + d*x + f
 
-        return max(y, 0) / -1000
+        return max(y, 0) / -1000 * self.relativeUsage
 
     def nextMessage(self):
         message = {
