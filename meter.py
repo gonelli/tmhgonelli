@@ -7,22 +7,23 @@ import datetime
 class Meter():
     startTime = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     currentTime = startTime
-    timeDelta = 120
     connection = None
     channel = None
     queueName = 'default'
+    timeDelta = 120
 
     def __init__(self, queueName='default'):
-        self.queueName = queueName
+
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
+
+        self.queueName = queueName
         self.channel.queue_declare(queue=queueName)
 
     def publish(self, message):
-        if self.channel is not None:
-            self.channel.basic_publish(
-                exchange='', routing_key=self.queueName, body=json.dumps(message))
+        self.channel.basic_publish(
+            exchange='', routing_key=self.queueName, body=json.dumps(message))
 
     def getConsptionFromTime(self):
         # https://www.desmos.com/calculator/sanlujpfmc
@@ -51,5 +52,6 @@ class Meter():
         self.publish(None)
         self.connection.close()
 
+
 if __name__ == '__main__':
-    Meter().start()
+    Meter('default').start()
