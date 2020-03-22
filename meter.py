@@ -10,7 +10,7 @@ class Meter():
     connection = None
     channel = None
     queueName = 'default'
-    timeDelta = 120
+    timeDelta = 2
     relativeUsage = 1.0
 
     def __init__(self, queueName='default'):

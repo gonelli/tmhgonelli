@@ -10,7 +10,7 @@ class MyApp(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(MyApp, self).__init__()
-        uic.loadUi(r'/Users/Gonelli/Projects/tmhgonelli/config.ui', self)
+        uic.loadUi(r'config.ui', self)
         self.simulateButton.clicked.connect(self.sendMeter)
         self.brokerButton.clicked.connect(self.toggleBroker)
         self.openCSVBox.clicked.connect(self.boxToggled)
@@ -101,7 +101,7 @@ class MyApp(QtWidgets.QMainWindow):
         meter.timeDelta = self.timeSlider.value()
         meter.relativeUsage = float(self.consumptionSlider.value()) / 100.0
         meter.start()
-        print("Button!")
+        print("Meter sent!")
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
