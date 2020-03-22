@@ -61,26 +61,26 @@ class MyApp(QtWidgets.QMainWindow):
 
     def changedIntensitySlider(self):
         self.intensityValueLabel.setText(str(self.intensitySlider.value()) + "%")
-        if self.brokerButton.text() == "Stop Broker":
+        if self.brokerButton.text() == "Stop Simulator":
             self.toggleBroker()
 
     def changedTimeSlider(self):
-        self.timeValueLabel.setText(str(self.timeSlider.value()) + " pts.")
+        self.timeValueLabel.setText(str(self.timeSlider.value()) + " sec.")
 
     def changedConsumptionSlider(self):
         self.consumptionValueLabel.setText(str(self.consumptionSlider.value()) + "%")
 
     def changedNthSlider(self):
         self.nthValueLabel.setText(str(self.nthSlider.value()) + " pts.")
-        if self.brokerButton.text() == "Stop Broker":
+        if self.brokerButton.text() == "Stop Simulator":
             self.toggleBroker()
 
     def toggleBroker(self):
         # Broker is running, so stop it
-        if self.brokerButton.text() == "Stop Broker":
+        if self.brokerButton.text() == "Stop Simulator":
             self.simulateButton.setEnabled(False)
             self.simulatorProcess.terminate()
-            self.brokerButton.setText("Start Broker")
+            self.brokerButton.setText("Start Simulator")
         # Broker is stopped, so start it
         else:
             self.simulateButton.setEnabled(True)
@@ -94,7 +94,7 @@ class MyApp(QtWidgets.QMainWindow):
             self.simulatorProcess.daemon = True
             self.simulatorProcess.start()
             self.simulatorProcess.join(0)
-            self.brokerButton.setText("Stop Broker")
+            self.brokerButton.setText("Stop Simulator")
 
     def sendMeter(self):
         meter = Meter()

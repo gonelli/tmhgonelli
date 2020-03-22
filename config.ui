@@ -205,7 +205,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Start Broker</string>
+     <string>Start Simulator</string>
     </property>
    </widget>
   </widget>
