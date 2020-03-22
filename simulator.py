@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import pika
-import pandas as pd
-import plotly.express as px
-import json, csv
+import subprocess
+import sys
+import json
+import csv
 import datetime
 import random
-
+import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
-
-import subprocess, sys
-
 
 class Simulator():
     modifier = 0
@@ -105,7 +104,9 @@ class Simulator():
                         color="#7f7f7f"
                     )
                 )
+                print("showing")
                 fig.show()
+                print("shown")
 
             a = zip(self.timeList, self.meterList, self.pvList, self.netPowerList)
             with open("output.csv", "w", newline="") as f:

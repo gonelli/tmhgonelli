@@ -1,5 +1,4 @@
 import sys
-import threading
 import multiprocessing
 from simulator import Simulator
 from meter import Meter
@@ -11,7 +10,7 @@ class MyApp(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(MyApp, self).__init__()
-        uic.loadUi('config.ui', self)
+        uic.loadUi(r'/Users/Gonelli/Projects/tmhgonelli/config.ui', self)
         self.simulateButton.clicked.connect(self.sendMeter)
         self.brokerButton.clicked.connect(self.toggleBroker)
         self.openCSVBox.clicked.connect(self.boxToggled)
